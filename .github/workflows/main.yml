@@ -1,0 +1,41 @@
+name: Auto-Update Economic Data & Rwanda Finance News
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # Runs daily at 6:00 AM UTC (8:00 AM Kigali time)
+  workflow_dispatch:
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Global Economic Data Pipeline
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          NISR_API_KEY: ${{ secrets.NISR_API_KEY }}
+          NISR_DATASET_ID: ${{ secrets.NISR_DATASET_ID }}
+        run: python pipeline.py
+
+      - name: Run BNR & Rwanda Financial News Pipeline
+        run: python fetch_news.py
+
+      - name: Commit and push updated DuckDB database
+        run: |
+          git config --local user.email "bot@econhub.com"
+          git config --local user.name "EconDataBot"
+          git add economics_hub.duckdb
+          git commit -m "Automated daily economic data and BNR news refresh" || exit 0
+          git pull --rebase
+          git push
