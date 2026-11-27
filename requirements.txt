@@ -1,0 +1,10 @@
+wbgapi
+fredapi
+requests
+pandas
+duckdb
+streamlit
+plotly
+openpyxl
+feedparser
+beautifulsoup4
