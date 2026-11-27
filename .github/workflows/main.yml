@@ -37,4 +37,4 @@ jobs:
           git config --local user.name "EconDataBot"
           git add economics_hub.duckdb
           git commit -m "Automated daily economic data and BNR news refresh" || exit 0
-          git push --force-with-lease
+          git push --force
