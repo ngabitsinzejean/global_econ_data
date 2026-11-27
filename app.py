@@ -26,12 +26,12 @@ p3.link_button("Open BNR (Central Bank)", "https://bnr.rw", use_container_width=
 p4.link_button("Open MINECOFIN Rwanda", "https://minecofin.gov.rw", use_container_width=True)
 
 # ---------------------------------------------------------
-# 2. DATA & NEWS LOADING
+# 2. DATA & NEWS LOADING (FIXED TABLE CHECK)
 # ---------------------------------------------------------
 @st.cache_data(ttl=600)
 def load_database():
     con = duckdb.connect("economics_hub.duckdb", read_only=True)
-    tables = [t[0] for t in con.execute("SHOW TABLES").fetchall()]
+    tables = [row[0] for row in con.execute("SHOW TABLES").fetchall()]
     
     indicators_df = con.execute("SELECT * FROM indicators ORDER BY date").df() if "indicators" in tables else pd.DataFrame()
     news_df = con.execute("SELECT * FROM rwanda_finance_news").df() if "rwanda_finance_news" in tables else pd.DataFrame()
@@ -46,7 +46,7 @@ except Exception as e:
     st.stop()
 
 if df.empty:
-    st.warning("No verified indicator records found yet. Run your GitHub Actions workflow once.")
+    st.warning("No verified indicator records found yet. Go to GitHub > Actions > Run workflow, then click Refresh Latest Data.")
     st.stop()
 
 # ---------------------------------------------------------
@@ -109,7 +109,7 @@ chart_df = region_df[region_df['country'].isin(selected_countries)].copy()
 available_hover = [c for c in ['source', 'region', 'indicator_code', 'data_status'] if c in chart_df.columns]
 
 # ---------------------------------------------------------
-# 5. MAIN DASHBOARD TABS (NEWS FIRST, TRENDS, MAP, AUDIT TABLE)
+# 5. MAIN DASHBOARD TABS
 # ---------------------------------------------------------
 tab_news, tab_trends, tab_map, tab_data = st.tabs([
     "BNR & Rwanda Finance News",
@@ -118,13 +118,12 @@ tab_news, tab_trends, tab_map, tab_data = st.tabs([
     "Verified Audit Table & Export"
 ])
 
-# --- TAB 1: BNR, NISR & RWANDA FINANCIAL NEWS FEED ---
 with tab_news:
     st.subheader("Live Updates: BNR, NISR, MINECOFIN & Rwandan Financial Institutions")
     if news_df.empty:
         st.info("News feed is initializing. Run your GitHub Actions workflow to fetch the latest BNR and Rwanda financial headlines.")
     else:
-        n_col1, n_col2 = st.columns([1, 2])
+        n_col1, n_col2 = st.columns(2)
         with n_col1:
             institutions = ["All Institutions"] + sorted(list(news_df['institution'].unique()))
             selected_inst = st.selectbox("Filter by Institution", institutions)
@@ -147,7 +146,6 @@ with tab_news:
                     f"📅 {row['published_date']} | ✅ {row['verified_source']}"
                 )
 
-# --- TAB 2: TIME-SERIES TRENDS ---
 with tab_trends:
     if chart_df.empty:
         st.info("Select one or more countries in the left sidebar to display trend charts.")
@@ -177,7 +175,6 @@ with tab_trends:
             fig_bar.update_layout(showlegend=False, xaxis_title="Economy", yaxis_title="Value")
             st.plotly_chart(fig_bar, use_container_width=True)
 
-# --- TAB 3: INTERACTIVE GLOBAL CHOROPLETH MAP ---
 with tab_map:
     map_df = region_df.copy()
     map_df['iso3'] = map_df['country'].str.extract(r'\(([A-Z]{3})\)')
@@ -201,7 +198,6 @@ with tab_map:
         fig_map.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0}, height=550)
         st.plotly_chart(fig_map, use_container_width=True)
 
-# --- TAB 4: AUDIT TABLE & CSV EXPORT ---
 with tab_data:
     st.subheader("Verified Dataset & Institutional Provenance")
     if chart_df.empty:
