@@ -2,7 +2,7 @@ name: Auto-Update Economic Data & Rwanda Finance News
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # Runs daily at 6:00 AM UTC (8:00 AM Kigali time)
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -37,5 +37,4 @@ jobs:
           git config --local user.name "EconDataBot"
           git add economics_hub.duckdb
           git commit -m "Automated daily economic data and BNR news refresh" || exit 0
-          git pull --rebase
-          git push
+          git push --force-with-lease
